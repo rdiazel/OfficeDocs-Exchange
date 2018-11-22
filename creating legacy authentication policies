@@ -2,36 +2,25 @@ PART I Query users and groups in Active Directory
 
 
 This document provides steps to query your own environment and helps to determine which users belongs to which groups and what attributes they have.
-
-
 The purpose of this guide is to help providing a guide to start mitigating brute force password spray attacks, when disabling legacy at all in your company can not be done, because this may affect some users or applications that works with legacy clients.
-
-
 This granularity allows to start applying changes to specific groups or users based on their attributes.
 
 
 The attribute to use, is one of your choice and this give you flexibility to complete this setup depending on your company requirements.
-
 The following link shows all AD user extended properties: https://social.technet.microsoft.com/wiki/contents/articles/12037.active-directory-get-aduser-default-and-extended-properties.aspx
  
-
 There are other ways to disable legacy authentication in AD using GPOs if needed. For example, this one was applied to Win10 Computers disabling legacy authentication:
-
 “Blocking basic authentication at the OS level for Windows 10 computers by setting Allow basic authenication to disabled in the GPO Computer Configuration\Policies\Administrative Templates\Windows Components\Windows Remote Management (WinRM)\WinRM Service.”
-
 
 Active Directory
 
 In this part, we will query AD users and Groups, to determine what attributes users have and which one we want to use to filter in Exchange Online service.
 
-
 1.Get a list of all of your AD Groups.
 
                In your AD server, open powershell as an Administrator. (right click, select Run as administrator)
 
-
 Get-ADGroup -filter * | select -Property name
-
 
                You can also export the outputs to a text file.
 

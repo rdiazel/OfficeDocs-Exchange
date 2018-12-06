@@ -1,3 +1,16 @@
+---
+title: "fill in article title..."
+ms.author: ridia
+author: rdiazel
+manager:ercastro 
+ms.audience: ITPro
+ms.topic: article
+ms.prod: exchange-server-it-pro
+localization_priority: Normal
+description: "fill in desc..."
+---
+
+
 PART I Query users and groups in Active Directory
 
 

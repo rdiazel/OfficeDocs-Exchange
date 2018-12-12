@@ -259,7 +259,7 @@ Set-User -Identity $user.windowsemailaddress -AuthenticationPolicy 'policyname'
 
 If you have any questions, concerns, or feedback, please send an email to ridia@microsoft.com or contact the Azure Identity team.
 
-References:
+## References:
 
 [Disable Basic authentication in Exchange Online](https://docs.microsoft.com/en-us/exchange/clients-and-mobile-in-exchange-online/disable-basic-authentication-in-exchange-online)
 

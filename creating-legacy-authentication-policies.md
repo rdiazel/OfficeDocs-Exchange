@@ -262,8 +262,11 @@ If you have any questions, concerns, or feedback, please send an email to ridia@
 References:
 
 [Disable Basic authentication in Exchange Online](https://docs.microsoft.com/en-us/exchange/clients-and-mobile-in-exchange-online/disable-basic-authentication-in-exchange-online)
+
 [Remove-AuthenticationPolicy](https://docs.microsoft.com/en-us/powershell/module/exchange/organization/remove-authenticationpolicy?view=exchange-ps)
+
 [Set-AuthenticationPolicy](https://docs.microsoft.com/en-us/powershell/module/exchange/organization/set-authenticationpolicy?view=exchange-ps)
+
 [Enable or disable modern authentication in Exchange Online](https://support.office.com/article/58018196-f918-49cd-8238-56f57f38d662)
 
 

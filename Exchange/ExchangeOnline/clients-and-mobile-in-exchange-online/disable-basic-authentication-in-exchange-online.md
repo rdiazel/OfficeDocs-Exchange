@@ -169,27 +169,24 @@ There are three basic methods you can use to assign authentication policies to u
 
 - **Individual user accounts**: Use the following syntax:
 
-    ```
-    Set-User -Identity <UserIdentity> -AuthenticationPolicy <PolicyIdentity>
-    ```
+ ```
+ Set-User -Identity <UserIdentity> -AuthenticationPolicy <PolicyIdentity>
+ ```
+
 
   This example assigns the policy named Block Basic Auth to the user account laura@contoso.com.
 
-    ```
-    Set-User -Identity laura@contoso.com -AuthenticationPolicy "Block Basic Auth"
-    ```
+```
+Set-User -Identity laura@contoso.com -AuthenticationPolicy "Block Basic Auth"
+```
+ 
+**Filter user accounts by attributes**
 
-- **Filter user accounts by attributes**: This method requires that the user accounts all share a unique filterable attribute (for example, Title or Department) that you can use to identify the users. The syntax uses the following commands (two to identify the user accounts, and the other to apply the policy to those users):
+- This method requires that the user accounts all share a unique filterable attribute (for example, Title or Department) that you can use to identify the users. The syntax uses the following commands (two to identify the user accounts, and the other to apply the policy to those users):
 
     ```
     $<VariableName1> = Get-User -ResultSize unlimited -Filter <Filter>
-    ```
-
-    ```
     $<VariableName2> = $<VariableName1>.MicrosoftOnlineServicesID
-    ```
-
-    ```
     $<VariableName2> | foreach {Set-User -Identity $_ -AuthenticationPolicy "Block Basic Auth"}
     ```
 
@@ -197,95 +194,105 @@ There are three basic methods you can use to assign authentication policies to u
 
     ```
     $SalesUsers = Get-User -ResultSize unlimited -Filter {(RecipientType -eq 'UserMailbox') -and (Title -like '*Sales Associate*')}
-    ```
-
-    ```
     $Sales = $SalesUsers.MicrosoftOnlineServicesID
-    ```
-
-    ```
     $Sales | foreach {Set-User -Identity $_ -AuthenticationPolicy "Block Basic Auth"}
     ```
 
+**Filter users accounts by attributes if Users Synced From On-Promise AD** 
 
+Here we will query and set one specific attribute For On-promise AD Group Members  that will be synced with Exchange Online to filter users based on this attribute. This will help us disable legacy protocols for specific groups and ensure that production will not affect the entire company.
 
-- **Filter users accounts by attributes if Users Synced From On-Promise AD**: Here we will query and set one specific attribute For On-promise AD Group Members  that will be synced with Exchange Online to filter users based on this attribute. This will help us disable legacy protocols for specific groups and ensure that production will not affect the entire company.
 The attribute we will use is the department name, as it is one of the most common attributes used to tag users depending on their department and roles.
+
 To see all Active Directory user extended properties, go to [Active Directory: Get-ADUser Default and Extended Properties](https://social.technet.microsoft.com/wiki/contents/articles/12037.active-directory-get-aduser-default-and-extended-properties.aspx). 
+
+#### Using Active Directory to apply the policy to users
+
+
+[!Note (You can use $users = Get-AdGroup command to apply the policy to an Active Directory group but there is a known limitation in Active Directory to list more than 5000 objects. This means that if you have more than 5000 users in a single group, you will need a custom script to apply the policy to all the users in that group)]
+
+
+From the AD server, you can follow these commands that will apply the policy to all members in an Active Directory Group. 
+
+- In this example we are creating a new policy that will disable ActiveSync, Pop, Smtp and Imap and.This is a good aproach if there are less than 5000 members on the AD group (Please keep in mind that you need to connect to Exchange Online from the AD server to combine both commands)
+
+```
+New-AuthenticationPolicy -Name ‘policy-name’ -AllowBasicAuthActiveSync:$false  -AllowBasicAuthPop:$false -AllowBasicAuthSmtp:$false -AllowBasicAuthImap:$false
+$users = get-adgroupmember "group-name"
+foreach ($user in $users) {Set-User -Identity $user.samaccountname -AuthenticationPolicy 'policyname'}
+```
 
 #### Step 1: Query your users in Active Directory And Set Users attributes
 
 ##### Get a list of all your AD Groups
 
 -  In your AD server, open PowerShell as an Administrator (right-click and select **Run as administrator**).
-    ```PowerShell
+
+    ```
     Get-ADGroup -filter * | select -Property name
     ```
+
 ##### Get the members of a group
 
-Now that we have all our groups, we can query which users belong to those groups and create a list based on any of their attributes. We recommend using the attribute `ObjectGuid`, as this value is unique for each user.
+- Now that we have all our groups, we can query which users belong to those groups and create a list based on any of their attributes. We recommend using the attribute `ObjectGuid`, as this value is unique for each user.
 
-```PowerShell
+```
 Get-ADGroupMember -Identity <groupname> | select -Property ObjectGuid
 ```
 
 ##### Set or get attributes
 
-Now we want to find or set one specific attribute that will be synced with Exchange Online to filter users based on this attribute. This will help us disable legacy protocols for specific groups and ensure that production will not affect the entire company.
+- We want to find or set one specific attribute that will be synced with Exchange Online to filter users based on this attribute. This will help us disable legacy protocols for specific groups and ensure that production will not affect the entire company.
 
-> [!Note]
 - These commands set the attribute “department” as “developer”, for users that belong to a group named “developer”, obtained in the previous steps.
 
-    ```PowerShell
+    ```
     $variable1 = Get-ADGroupMember -Identity "<groupname>" | select -expandproperty "objectGUID"
     Foreach ($user in $variable1) {set-ADUser -identity $user.ToString()  -Add @{department="<department_name>"}}
     ```
 
-- Query your users to make sure the attribute was applied or determine whether they already have it.
+- Query your users to make sure the attribute was applied or determine whether they already have it or not.
 
-    ```PowerShell
+    ```
     Get-ADUser -filter {(department -eq '<department_name>')} -Properties Department
     ```
+
 #### Step 2: Disable legacy authentication  in Exchange Online
+
 
 Before you continue, it is important to know that attributes for users that exist on premises are synced to Exchange Online only when users have a valid Exchange license. If you need to check this, you can run queries in Exchange Online using PowerShell.
 
 To apply a license to any given user or group, go to **https://portal.office.com > Billing > Subscriptions** and select the license you want to enable for users.
 
-
-
 ##### Connecting to Exchange Online
-    ```Powershell
+
+```
     #require all PowerShell scripts that you download from the internet are signed by a trusted publisher
     Set-ExecutionPolicy RemoteSigned
     #get credentials
     $UserCredential = Get-Credential
     $Session = New-PSSession -ConfigurationName Microsoft.Exchange -ConnectionUri https://outlook.office365.com/powershell-liveid/ -        Credential $UserCredential -Authentication Basic -AllowRedirection
     Import-PSSession $Session -DisableNameChecking
-    #If you don't receive any errors, you connected successfully
-    ```
-To quickly test, run an Exchange Online cmdlet, such Get-Mailbox, and see the results. If no error is returned, you connected successfully.
- ```Powershell
-    Get-User -ResultSize unlimited -Filter {(RecipientType -eq 'UserMailbox') -and (department -like '*developer*')}
+   #If you don't receive any errors, you connected successfully
+```
+
+- To quickly test, run an Exchange Online cmdlet, such Get-Mailbox, and see the results. If no error is returned, you connected successfully.
+
+ ```
+ Get-User -ResultSize unlimited -Filter {(RecipientType -eq 'UserMailbox') -and (department -like '*developer*')}
  ```
 
-    > [!Note]
-    > The attribute “department” was verified or set in Step 1.**
+
+ **[!Note (The attribute “department” was verified or set in Step 1.)]**
 
 
-  assigns the policy named Block Basic Auth to all user accounts whose ** department ** attribute contains the value "developer ".
+ - Assign the policy named Block Basic Auth to all user accounts whose **department** attribute contains the value "developer".
 
-    ```
-    $developerUsers = Get-User -ResultSize unlimited -Filter {(RecipientType -eq 'UserMailbox') -and (department -like '*developer*')}
-    ```
-
-    ```
-    $developers = $developerUsers.MicrosoftOnlineServicesID
-    ```
-
-    ```
-    $developers | foreach {Set-User -Identity $_ -AuthenticationPolicy "Block Basic Auth"}
-    ```
+   ```
+   $developerUsers = Get-User -ResultSize unlimited -Filter {(RecipientType -eq 'UserMailbox') -and (department -like '*developer*')}
+   $developers = $developerUsers.MicrosoftOnlineServicesID
+   $developers | foreach {Set-User -Identity $_ -AuthenticationPolicy "Block Basic Auth"}
+  ```
 
 - **Use a list of specific user accounts**: This method requires a text file to identify the user accounts. Values that don't contain spaces (for example, the Office 365 work or school account) work best. The text file must contain one user account on each line like this:
 
@@ -299,9 +306,6 @@ To quickly test, run an Exchange Online cmdlet, such Get-Mailbox, and see the re
 
     ```
     $<VariableName> = Get-Content "<text file>"
-    ```
-
-    ```
     $<VariableName> | foreach {Set-User -Identity $_ -AuthenticationPolicy <PolicyIdentity>}
     ```
 
@@ -309,9 +313,6 @@ To quickly test, run an Exchange Online cmdlet, such Get-Mailbox, and see the re
 
     ```
     $BBA = Get-Content "C:\My Documents\BlockBasicAuth.txt"
-    ```
-
-    ```
     $BBA | foreach {Set-User -Identity $_ -AuthenticationPolicy "Block Basic Auth"}
     ```
 
@@ -414,6 +415,28 @@ Remove-AuthenticationPolicy -Identity "Test Auth Policy"
 ```
 
 For detailed syntax and parameter information, see [Remove-AuthenticationPolicy](https://docs.microsoft.com/powershell/module/exchange/organization/remove-authenticationpolicy).
+
+### Confirm that the policy was applied correctly 
+
+- You can run the following commands to check that the policy was applied to the users or query the policy to list the users for whose the policy was applied for
+
+```
+Get-User -Filter {(RecipientType -eq 'UserMailbox') -and (Department -like '<departmentname>')} | select -Property * 
+```
+
+- The fundamental lesson I learned when working on this topic about the Filter parameter for on-premises Exchange Server: use the distinguished name (DN) of the object. Other unique values like Name, Alias, EmailAddress, etc. that should work don't. 
+
+So, run the command: 
+
+```
+Get-AuthenticationPolicy | Format-List Name,DistinguishedName 
+```
+
+And then use the DN value for the filter: 
+
+```
+Get-User -Filter {AuthenticationPolicy -eq '<DN of Disable Legacy auth policy>'} 
+```   
 
 ### How do you know that you've successfully disabled Basic authentication in Exchange Online?
 

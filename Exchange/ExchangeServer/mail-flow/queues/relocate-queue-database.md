@@ -95,6 +95,9 @@ To verify that you've successfully created a new queue database and new transact
 ## Use the Command Prompt to move the existing queue database and transaction logs to a new location
 <a name="Existing"> </a>
 
+> [!NOTE]
+> There is also a script to move the queue database and transaction logs, it can be found in the %ExchangeInstallPath%Scripts folder and it's called Move-TransportDatabase.ps1. You have to specify the following parameters: queueDatabasePath, queueDatabaseLoggingPath, iPFilterDatabasePath, iPFilterDatabaseLoggingPath and temporaryStoragePath.
+
 Although you'll need to move the existing queue database to preserve any undelivered messages in it, you typically don't need to move the existing transaction logs because:
   
 - An ordinary shutdown of the Exchange Transport service writes all uncommitted transaction log entries to the queue database.

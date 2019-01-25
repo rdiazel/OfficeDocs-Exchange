@@ -425,6 +425,18 @@ Set-OrganizationConfig -PublicFolderMailboxesLockedForNewConnections $true
 
 If your organization has public folder mailboxes on multiple Exchange 2013 servers, you'll need to wait until AD replication is complete. Once complete, you can confirm that all public folder mailboxes have picked up the `PublicFolderMailboxesLockedForNewConnections` flag, and that any pending changes users recently made to their public folders have converged across the organization. All of this could take several hours.
 
+Run the following On-Premises to ensure the public folders are locked:
+
+Get-PublicFolder \
+
+Expected outout, if public folders are locked, is:
+
+[PS] C:\>Get-PublicFolder \
+Couldn't find the public folder mailbox.
+    + CategoryInfo          : NotSpecified: (:) [Get-PublicFolder], ObjectNotFoundException
+
+
+
 ## Step 7: Finalize the public folder migration (public folder downtime required)
 <a name="Generatecsv"> </a>
 
